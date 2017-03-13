@@ -7,9 +7,10 @@ The Main interface
 
 import GlobalValue
 import Utils
+import AdbOperator
 from DeviceDialog import DeviceDialog
-from PyQt5.QtWidgets import QMainWindow, QAction, QDesktopWidget
-from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QMainWindow, QAction, QDesktopWidget, QLabel
+from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import QTimer
 
 
@@ -23,8 +24,9 @@ class MainWindow(QMainWindow):
         """
         显示UI
         """
-        # textEdit = QTextEdit()
-        # self.setCentralWidget(textEdit)
+        phoneImg = QLabel()
+        phoneImg.setPixmap(QPixmap("img/phone.png"))
+        self.setCentralWidget(phoneImg)
 
         self.playAction = QAction(QIcon('img/play.png'), 'Play', self)
         self.playAction.setShortcut('Ctrl+P')
@@ -82,6 +84,9 @@ class MainWindow(QMainWindow):
             tip = GlobalValue.connectedDevice + ' connected'
 
         self.statusBar().showMessage(tip)
+
+        phoneSize = AdbOperator.getPhoneSize()
+        self.resize(phoneSize[0], phoneSize[1])
         pass
 
     def showEvent(self, QShowEvent):
