@@ -5,5 +5,5 @@
 The storige of the global value
 """
 
-connectedDevice = ''
+connectedDevice = '' + ''
 
