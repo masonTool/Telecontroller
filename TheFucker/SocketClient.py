@@ -41,14 +41,11 @@ class SocketClient(QObject):
         if self.isConnected:
             tmp = self.messageBox
             for item in tmp:
-                ss = ""
-                ss.encode()
                 length = self.tcpSocket.writeData(item.encode())
                 self.tcpSocket.flush()
-
                 self.messageBox.remove(item)
                 if length >0:
-                    print("send: " + str(self.tcpSocket.isWritable()) + "-" + str(length) + "--" +item)
+                    print("send succssed:" + item)
         else:
             self.tcpSocket.connectToHost(self.ip, self.port)
         pass
@@ -60,6 +57,5 @@ class SocketClient(QObject):
 
     def readyRead(self):
         result = str(self.tcpSocket.readLine(), encoding='utf-8')
-        print('received: ' + result)
         self.message.emit(result)
         pass

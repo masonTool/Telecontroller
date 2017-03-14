@@ -61,6 +61,7 @@ class DeviceDialog(QDialog):
             size = AdbOperator.getPhoneSize()
             parent.resize(int(size[0] / 4), int(size[1] / 4))
             parent.statusBar().showMessage('窗口调整为：' + str(size[0]) + 'x' + str(size[1]))
+            AdbOperator.buildBridge(GlobalValue.pc_port, GlobalValue.phone_port) #建立连接
 
         self.close()
         pass

@@ -5,14 +5,21 @@
 The Main interface
 """
 
+from PyQt5.QtCore import QTimer, pyqtSignal, QObject
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QMainWindow, QAction, QLabel, QInputDialog, QLineEdit
+from pymouse import PyMouseEvent
+
+import AdbOperator
+import EventUtils
 import GlobalValue
 import Utils
-import AdbOperator
-from SocketClient import SocketClient
 from DeviceDialog import DeviceDialog
-from PyQt5.QtWidgets import QMainWindow, QAction, QDesktopWidget, QLabel, QInputDialog, QLineEdit
-from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import QTimer
+from SocketClient import SocketClient
+
+
+class EventBound(QObject):
+    event = pyqtSignal([str])
 
 
 class MainWindow(QMainWindow):
@@ -20,8 +27,11 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.proxyMode = False
+        self.eventBound = EventBound()
         self.client = SocketClient('127.0.0.1', GlobalValue.pc_port)
         self.client.message[str].connect(self.showReceived)
+        self.eventBound.event[str].connect(self.client.send)
 
         self.initUI()
         pass
@@ -37,22 +47,22 @@ class MainWindow(QMainWindow):
         self.playAction = QAction(QIcon('img/play.png'), 'Play', self)
         self.playAction.setShortcut('Ctrl+P')
         self.playAction.setStatusTip('Play')
-        self.playAction.triggered.connect(self.startProxy)
+        self.playAction.triggered.connect(self.toggleProxy)
 
         deviceAction = QAction(QIcon('img/device.png'), 'Device', self)
         deviceAction.setShortcut('Ctrl+D')
         deviceAction.setStatusTip('Device')
-        deviceAction.triggered.connect(self.showDevice)
+        deviceAction.triggered.connect(self.showDeviceDialog)
 
         configAction = QAction(QIcon('img/config.png'), 'Config', self)
         configAction.setShortcut('Ctrl+C')
         configAction.setStatusTip('Config')
-        configAction.triggered.connect(self.startProxy)
+        configAction.triggered.connect(self.startSend)
 
         infoAction = QAction(QIcon('img/info.png'), 'Info', self)
         infoAction.setShortcut('Ctrl+I')
         infoAction.setStatusTip('Info')
-        infoAction.triggered.connect(self.startProxy)
+        # infoAction.triggered.connect(self.startProxy)
 
         toolbar = self.addToolBar('')
         toolbar.addAction(self.playAction)
@@ -66,17 +76,7 @@ class MainWindow(QMainWindow):
         Utils.center(self)
         pass
 
-    def center(self):
-        """
-        居中显示
-        """
-        screen = QDesktopWidget().screenGeometry()
-        size = self.geometry()
-        self.move((screen.width() - size.width()) / 2,
-                  (screen.height() - size.height()) / 2)
-        pass
-
-    def showDevice(self):
+    def showDeviceDialog(self):
         """
         显示设备选择界面
         """
@@ -93,16 +93,26 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage('选择连接设备');
             self.timer = QTimer();
             self.timer.setSingleShot(True)
-            self.timer.timeout.connect(self.showDevice)
+            self.timer.timeout.connect(self.showDeviceDialog)
             self.timer.start(200)
         pass
 
-    def startProxy(self):
-        """
-        开始用电脑代理鼠标和键盘
-        """
-        AdbOperator.buildBridge(GlobalValue.pc_port, GlobalValue.phone_port)
+    def toggleProxy(self):
+        if self.proxyMode:
+            self.proxyMode = False
+            self.playAction.setIcon(QIcon('img/play.png'))
+            self.mouseEvent.stop()
+        else:
+            self.proxyMode = True
+            self.playAction.setIcon(QIcon('img/pause.png'))
+            self.mouseEvent = MyMouseEvent(self.eventBound)
+            self.mouseEvent.start()
+        pass
 
+    def startSend(self):
+        """
+        测试通信
+        """
         text, ok = QInputDialog.getText(self, "QInputDialog.getText()",
                 "User name:", QLineEdit.Normal, '')
         if ok and text != '':
@@ -110,7 +120,105 @@ class MainWindow(QMainWindow):
         pass
 
     def showReceived(self, message):
-        self.statusBar().showMessage(message)
+        """
+        槽函数显示手机端返回数据
+        """
+        print('received: ' + message)
+        pass
+
+    def keyPressEvent(self, e):
+        """
+        接收键盘按下事件
+        """
+        if not self.proxyMode:
+            return
+
+        print('keyboard pressed: %s %s' %(e.key(), e.text()))
+
+        if len(e.text()) == 0:
+            ascii = 0
+        else:
+            ascii = ord(e.text())
+
+        data = '%s,%s,%s,%s' %(EventUtils.KEYBOARD_TYPE, EventUtils.KEYBOARD_ACTION_DOWN, e.key(), ascii)
+        self.eventBound.event.emit(data)
+        pass
+
+    def keyReleaseEvent(self, e):
+        """
+        接收键盘释放事件
+        """
+        if not self.proxyMode:
+            return
+
+        print('keyboard released: %s %s' % (e.key(), e.text()))
+
+        if len(e.text()) == 0:
+            ascii = 0
+        else:
+            ascii = ord(e.text())
+
+        data = '%s,%s,%s,%s' %(EventUtils.KEYBOARD_TYPE, EventUtils.KEYBOARD_ACTION_UP, e.key(), ascii)
+        self.eventBound.event.emit(data)
+        pass
+
+
+class MyMouseEvent(PyMouseEvent):
+
+    def __init__(self, eventBound):
+        super().__init__()
+        self.event = eventBound.event
+        self.enabled = True
+        pass
+
+    def click(self, x, y, button, press):
+        if not self.enabled:
+            return
+
+        print('mouse clicked: %s  %s  %s  %s' %(x, y, button, press))
+
+        if button == 1 and press:
+            action = EventUtils.MOUSE_ACTION_LEFT_DOWN
+        elif button == 1 and not press:
+            action = EventUtils.MOUSE_ACTION_LEFT_UP
+        elif button == 2 and press:
+            action = EventUtils.MOUSE_ACTION_RIGHT_DOWN
+        elif button == 2 and not press:
+            action = EventUtils.MOUSE_ACTION_RIGHT_UP
+        else:
+            # TODO
+            pass
+
+        data = '%s,%s,%s,%s'%(EventUtils.MOUSE_TYPE, action, x, y)
+        self.event.emit(data)
+        pass
+
+    def scroll(self, x, y, vertical, horizontal):
+        if not self.enabled:
+            return
+        """
+        TODO
+        :param x:
+        :param y:
+        :param vertical:
+        :param horizontal:
+        :return:
+        """
+        print('mouse scrolled: %s  %s  %s  %s' % (x, y, vertical, horizontal))
+        pass
+
+    def move(self, x, y):
+        if not self.enabled:
+            return
+        print('mouse moved: %s %s' %(x, y))
+        data = '%s,%s,%s,%s'%(EventUtils.MOUSE_TYPE, EventUtils.MOUSE_ACTION_MOVE, x, y)
+        self.event.emit(data)
+        pass
+
+    def stop(self):
+        self.enabled = False
+        super().stop()
+        pass
 
 
 if __name__ == '__main__':

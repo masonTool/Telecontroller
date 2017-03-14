@@ -43,13 +43,13 @@ class Window(QtWidgets.QMainWindow):
         self.move((screen.width() - size.width()) / 2,
                   (screen.height() - size.height()) / 2)
 
-    # def keyPressEvent(self, e):
-    #     print('pressed: %s  %s  %s  ' %(e.text(), e.count(), e.key()))
-    #     self.label.setText(e.text())
-    #     self.statusBar().showMessage(e.text())
-    #
-    # def keyReleaseEvent(self, e):
-    #     print('released: %s  %s  %s  ' % (e.text(), e.count(), e.key()))
+    def keyPressEvent(self, e):
+        print('pressed: %s  %s  %s  ' %(e.text(), e.count(), e.key()))
+        self.label.setText(e.text())
+        self.statusBar().showMessage(e.text())
+
+    def keyReleaseEvent(self, e):
+        print('released: %s  %s  %s  ' % (e.text(), e.count(), e.key()))
 
     # def mouseMoveEvent(self, e):
     #     self.label.setText("("+str(e.x())+","+str(e.y())+")")
@@ -75,14 +75,14 @@ class MyMouseEvent(PyMouseEvent):
         print('scrolled: %s  %s  %s  %s' % (x, y, vertical, horizontal))
         pass
 
-    # def move(self, x, y):
-    #     print(str(x) + "--" + str(y))
+    def move(self, x, y):
+        print(str(x) + "--" + str(y))
 
 
-class MyKeyboardEvent(PyKeyboardEvent):
-    def tap(self, keycode, character, press):
-        print('tabed: %s  %s  %s' % (keycode, character, press))
-        pass
+# class MyKeyboardEvent(PyKeyboardEvent):
+#     def tap(self, keycode, character, press):
+#         print('tabed: %s  %s  %s' % (keycode, character, press))
+#         pass
 
     # def escape(self, event):
     #     """
@@ -106,11 +106,11 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
 
     a = MyMouseEvent()
-    k = MyKeyboardEvent()
+    # k = MyKeyboardEvent()
     window = Window()
     window.show()
     a.start()
-    k.start()
+    # k.start()
 
     print("sssss")
     sys.exit(app.exec_())
