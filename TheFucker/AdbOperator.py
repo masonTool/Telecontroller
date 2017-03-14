@@ -31,13 +31,13 @@ def getPhoneSize():
     groups = re.match(r'.*?(?P<width>\d+)x(?P<height>\d+)', result)
     return [int(groups['width']), int(groups['height'])]
 
-def buildBridge(port):
+def buildBridge(pc_port, phone_port):
     # executeCommand('%s forward tcp:%s tcp:9999' % (adb, port))
-    executeCommand('%s -s %s forward tcp:%s tcp:9000' % (adb, GlobalValue.connectedDevice, port))
+    executeCommand('%s -s %s forward tcp:%s tcp:%s' % (adb, GlobalValue.connectedDevice, pc_port, phone_port))
     pass
 
 
 if __name__ == '__main__':
     print(getDevices())
     # print(getPhoneSize())
-    buildBridge(8888)
+    buildBridge(GlobalValue.pc_port, GlobalValue.phone_port)

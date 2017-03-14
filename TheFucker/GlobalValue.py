@@ -5,5 +5,9 @@
 The storige of the global value
 """
 
-connectedDevice = '' + ''
+connectedDevice = ''
+
+pc_port = 8000 #电脑端端口
+
+phone_port = 9000  #手机端端口
 

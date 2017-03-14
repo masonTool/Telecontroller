@@ -20,7 +20,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.client = SocketClient('127.0.0.1', 8000)
+        self.client = SocketClient('127.0.0.1', GlobalValue.pc_port)
         self.client.message[str].connect(self.showReceived)
 
         self.initUI()
@@ -101,7 +101,7 @@ class MainWindow(QMainWindow):
         """
         开始用电脑代理鼠标和键盘
         """
-        AdbOperator.buildBridge(8000)
+        AdbOperator.buildBridge(GlobalValue.pc_port, GlobalValue.phone_port)
 
         text, ok = QInputDialog.getText(self, "QInputDialog.getText()",
                 "User name:", QLineEdit.Normal, '')

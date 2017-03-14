@@ -28,13 +28,9 @@ public class SocketServer {
     private ServerSocket serverSocket;
     private boolean loop = true;
 
-    @Before
-    public void init() throws Exception{
-        serverSocket = new ServerSocket(PORT);
-    }
-
     @Test
-    public void acceptFromPC() {
+    public void acceptFromPC() throws IOException {
+        serverSocket = new ServerSocket(PORT);
         while(loop) {
             Log.e(TAG, "socket server waiting ...");
             try {
@@ -64,7 +60,6 @@ public class SocketServer {
             } catch(Exception e) {
                 Log.e(TAG, "error: " + e.toString());
                 e.printStackTrace();
-                break;
             }
         }
 
