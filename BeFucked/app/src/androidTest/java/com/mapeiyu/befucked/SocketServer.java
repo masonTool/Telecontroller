@@ -13,6 +13,7 @@ import org.junit.runner.RunWith;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -22,7 +23,7 @@ import static org.junit.Assert.*;
 @RunWith(AndroidJUnit4.class)
 public class SocketServer {
     public static final String TAG = "SocketServer";
-    public static int PORT = 9999;
+    public static int PORT = 9000;
 
     private ServerSocket serverSocket;
     private boolean loop = true;
@@ -40,8 +41,15 @@ public class SocketServer {
                 Socket server = serverSocket.accept();
                 Log.e(TAG, "connected: " + server.getRemoteSocketAddress());
 
-                DataInputStream in = new DataInputStream(server.getInputStream());
-                String received = in.readUTF();
+                InputStream inputStream = server.getInputStream();
+                byte[] bytes = new byte[1024];
+                int len;
+                StringBuilder builder = new StringBuilder();
+                if ((len = inputStream.read(bytes)) != -1) {
+                    builder.append(new String(bytes, 0, len));
+                }
+                String received = builder.toString();
+
                 Log.e(TAG, "received: " + received);
 
                 if ("stop".equals(received)) {
@@ -49,7 +57,9 @@ public class SocketServer {
                 }
 
                 DataOutputStream out = new DataOutputStream(server.getOutputStream());
-                out.writeUTF("response for: " + received);
+                String response = "response for: " + received;
+                out.write(response.getBytes());
+                out.flush();
                 server.close();
             } catch(Exception e) {
                 Log.e(TAG, "error: " + e.toString());

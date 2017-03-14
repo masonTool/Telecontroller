@@ -8,8 +8,9 @@ Mason created
 import subprocess
 import platform
 import GlobalValue
+import re
 
-adbPath = './adb/' + platform.system() + '_adb'
+adb = './adb/%s_adb' % platform.system()
 
 
 def executeCommand(cmd):
@@ -17,16 +18,26 @@ def executeCommand(cmd):
 
 
 def getDevices():
-    result = executeCommand(adbPath + ' devices').split('\\n')[1:-2]
-    return list(map(lambda it:it.split('\\t')[0], result))
+    result = executeCommand('%s devices' %adb).split('\\n')[1:-2]
+    return list(map(lambda it: it.split('\\t')[0], result))
 
 def inputEvent(keycode):
-    executeCommand(adbPath + ' -s ' +  GlobalValue.connectedDevice + ' shell input keyevent ' + keycode)
+    executeCommand('%s -s %s shell input keyevent %s' %(adb, GlobalValue.connectedDevice, keycode))
     pass
 
 def getPhoneSize():
-    return list(map(lambda it:int(it), executeCommand(adbPath + ' -s ' + GlobalValue.connectedDevice + ' shell wm size').split('x')))
+    result = executeCommand('%s -s %s shell wm size' %(adb, GlobalValue.connectedDevice))
+    # result = executeCommand(adbPath + ' shell wm size')
+    groups = re.match(r'.*?(?P<width>\d+)x(?P<height>\d+)', result)
+    return [int(groups['width']), int(groups['height'])]
+
+def buildBridge(port):
+    # executeCommand('%s forward tcp:%s tcp:9999' % (adb, port))
+    executeCommand('%s -s %s forward tcp:%s tcp:9000' % (adb, GlobalValue.connectedDevice, port))
+    pass
 
 
 if __name__ == '__main__':
     print(getDevices())
+    # print(getPhoneSize())
+    buildBridge(8888)

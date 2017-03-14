@@ -8,8 +8,9 @@ The Main interface
 import GlobalValue
 import Utils
 import AdbOperator
+from SocketClient import SocketClient
 from DeviceDialog import DeviceDialog
-from PyQt5.QtWidgets import QMainWindow, QAction, QDesktopWidget, QLabel
+from PyQt5.QtWidgets import QMainWindow, QAction, QDesktopWidget, QLabel, QInputDialog, QLineEdit
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import QTimer
 
@@ -18,14 +19,19 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+
+        self.client = SocketClient('127.0.0.1', 8000)
+        self.client.message[str].connect(self.showReceived)
+
         self.initUI()
+        pass
 
     def initUI(self):
         """
         显示UI
         """
         phoneImg = QLabel()
-        phoneImg.setPixmap(QPixmap("img/phone.png"))
+        # phoneImg.setPixmap(QPixmap("img/phone.png"))
         self.setCentralWidget(phoneImg)
 
         self.playAction = QAction(QIcon('img/play.png'), 'Play', self)
@@ -76,17 +82,6 @@ class MainWindow(QMainWindow):
         """
         deviceDialog = DeviceDialog(self)
         deviceDialog.exec()
-
-        #after execution
-        if not GlobalValue.connectedDevice:
-            tip = 'no device connected'
-        else:
-            tip = GlobalValue.connectedDevice + ' connected'
-
-        self.statusBar().showMessage(tip)
-
-        phoneSize = AdbOperator.getPhoneSize()
-        self.resize(phoneSize[0], phoneSize[1])
         pass
 
     def showEvent(self, QShowEvent):
@@ -95,7 +90,7 @@ class MainWindow(QMainWindow):
         """
         print('show')
         if not GlobalValue.connectedDevice:
-            self.statusBar().showMessage('config device on start');
+            self.statusBar().showMessage('选择连接设备');
             self.timer = QTimer();
             self.timer.setSingleShot(True)
             self.timer.timeout.connect(self.showDevice)
@@ -106,8 +101,16 @@ class MainWindow(QMainWindow):
         """
         开始用电脑代理鼠标和键盘
         """
-        print("start Proxy")
+        AdbOperator.buildBridge(8000)
+
+        text, ok = QInputDialog.getText(self, "QInputDialog.getText()",
+                "User name:", QLineEdit.Normal, '')
+        if ok and text != '':
+            self.client.send(text)
         pass
+
+    def showReceived(self, message):
+        self.statusBar().showMessage(message)
 
 
 if __name__ == '__main__':

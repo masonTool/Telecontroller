@@ -52,10 +52,15 @@ class DeviceDialog(QDialog):
 
     def okAction(self):
         item = self.deviceListWidget.selectedItems()
-        if len(item) > 0:
-            GlobalValue.connectedDevice = item[0].text()
-        else:
+        if len(item) == 0:
             GlobalValue.connectedDevice = ''
+        else:
+            GlobalValue.connectedDevice = item[0].text()
+            parent = self.parentWidget()
+            parent.statusBar().showMessage(GlobalValue.connectedDevice + ' 连接成功')
+            size = AdbOperator.getPhoneSize()
+            parent.resize(int(size[0] / 4), int(size[1] / 4))
+            parent.statusBar().showMessage('窗口调整为：' + str(size[0]) + 'x' + str(size[1]))
 
         self.close()
         pass
