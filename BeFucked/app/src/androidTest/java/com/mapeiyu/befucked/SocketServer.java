@@ -36,7 +36,7 @@ public class SocketServer {
             Log.e(TAG, "socket server waiting ...");
             try {
                 Socket server = serverSocket.accept();
-                Log.e(TAG, "connected: " + server.getRemoteSocketAddress());
+//                Log.e(TAG, "connected: " + server.getRemoteSocketAddress());
 
                 InputStream inputStream = server.getInputStream();
                 byte[] bytes = new byte[1024];

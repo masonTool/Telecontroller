@@ -7,7 +7,9 @@ The storige of the global value
 
 connectedDevice = ''
 
-pc_port = 8000 #电脑端端口
+deviceSize = []
 
-phone_port = 9000  #手机端端口
+pc_port = '8000' #电脑端端口
+
+phone_port = '9000'  #手机端端口
 

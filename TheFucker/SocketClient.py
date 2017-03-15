@@ -5,11 +5,10 @@ from PyQt5.QtNetwork import (QTcpSocket)
 class SocketClient(QObject):
 
     message = pyqtSignal([str])
-    connection = pyqtSignal([bool])
 
     def __init__(self, ip, port):
         super().__init__()
-        self.port = port
+        self.port = int(port)
         self.ip = ip
         self.isConnected = False
 
@@ -27,32 +26,27 @@ class SocketClient(QObject):
         pass
 
     def connected(self):
-        self.isConnected = True
-        self.actionSend()
-        self.connection.emit(True)
+        if len(self.messageBox) > 0:
+            message = self.messageBox[0]
+            if self.tcpSocket.writeData(message.encode()) > 0:
+                print("send succssed:" + message)
+                self.messageBox.remove(message)
+                if len(self.messageBox) > 0:
+                    self.sendNext()
+
         pass
 
     def disconnected(self):
-        self.isConnected = False
-        self.connection.emit(False)
         pass
 
-    def actionSend(self):
-        if self.isConnected:
-            tmp = self.messageBox
-            for item in tmp:
-                length = self.tcpSocket.writeData(item.encode())
-                self.tcpSocket.flush()
-                self.messageBox.remove(item)
-                if length >0:
-                    print("send succssed:" + item)
-        else:
-            self.tcpSocket.connectToHost(self.ip, self.port)
+    def sendNext(self):
+        self.close()
+        self.tcpSocket.connectToHost(self.ip, self.port)
         pass
 
     def send(self, message):
         self.messageBox.append(message)
-        self.actionSend()
+        self.sendNext()
         pass
 
     def readyRead(self):

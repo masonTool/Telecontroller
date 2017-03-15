@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-The Main interface
+Device Dialog
 """
 from PyQt5.QtWidgets import (QDialog, QPushButton, QGroupBox,
     QListWidget, QListWidgetItem, QVBoxLayout, QHBoxLayout)
@@ -54,14 +54,15 @@ class DeviceDialog(QDialog):
         item = self.deviceListWidget.selectedItems()
         if len(item) == 0:
             GlobalValue.connectedDevice = ''
+            GlobalValue.deviceSize = []
         else:
             GlobalValue.connectedDevice = item[0].text()
-            parent = self.parentWidget()
-            parent.statusBar().showMessage(GlobalValue.connectedDevice + ' 连接成功')
+            # 设置窗口大小
             size = AdbOperator.getPhoneSize()
-            parent.resize(int(size[0] / 4), int(size[1] / 4))
-            parent.statusBar().showMessage('窗口调整为：' + str(size[0]) + 'x' + str(size[1]))
-            AdbOperator.buildBridge(GlobalValue.pc_port, GlobalValue.phone_port) #建立连接
+            self.parentWidget().setFixedSize(int(size[0] / 4), int(size[1] / 4))
+            GlobalValue.deviceSize = size
+            # 建立连接
+            AdbOperator.buildBridge(GlobalValue.pc_port, GlobalValue.phone_port)
 
         self.close()
         pass

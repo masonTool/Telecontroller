@@ -5,7 +5,7 @@
 The Main interface
 """
 
-from PyQt5.QtCore import QTimer, pyqtSignal, QObject
+from PyQt5.QtCore import QTimer, pyqtSignal, QObject, QPoint, QSize
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QAction, QLabel, QInputDialog, QLineEdit
 from pymouse import PyMouseEvent
@@ -16,6 +16,7 @@ import GlobalValue
 import Utils
 from DeviceDialog import DeviceDialog
 from SocketClient import SocketClient
+from SettingsDialog import SettingsDialog
 
 
 class EventBound(QObject):
@@ -23,7 +24,7 @@ class EventBound(QObject):
 
 
 def debug(str):
-    # print(str)
+    print(str)
     pass
 
 class MainWindow(QMainWindow):
@@ -31,11 +32,13 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.sizeRecord = QSize(0, 0)
+        self.positionRecord = QPoint(0, 0)
         self.proxyMode = False
         self.eventBound = EventBound()
         self.client = SocketClient('127.0.0.1', GlobalValue.pc_port)
         self.client.message[str].connect(self.showReceived)
-        self.eventBound.event[str].connect(self.eventReceiver)
+        self.eventBound.event[str].connect(self.sendWrapper)
 
         self.initUI()
         pass
@@ -61,12 +64,12 @@ class MainWindow(QMainWindow):
         configAction = QAction(QIcon('img/config.png'), 'Config', self)
         configAction.setShortcut('Ctrl+C')
         configAction.setStatusTip('Config')
-        configAction.triggered.connect(self.startSend)
+        configAction.triggered.connect(self.showSettingsDialog)
 
         infoAction = QAction(QIcon('img/info.png'), 'Info', self)
         infoAction.setShortcut('Ctrl+I')
         infoAction.setStatusTip('Info')
-        # infoAction.triggered.connect(self.startProxy)
+        infoAction.triggered.connect(self.startSend)
 
         toolbar = self.addToolBar('')
         toolbar.addAction(self.playAction)
@@ -76,6 +79,7 @@ class MainWindow(QMainWindow):
 
         self.statusBar()
         self.resize(500, 500)
+        GlobalValue.deviceSize = [500, 500]
         self.setWindowTitle('Telecontroller')
         Utils.center(self)
         pass
@@ -86,6 +90,14 @@ class MainWindow(QMainWindow):
         """
         deviceDialog = DeviceDialog(self)
         deviceDialog.exec()
+        pass
+
+    def showSettingsDialog(self):
+        """
+        设置界面
+        """
+        settingsDialog = SettingsDialog(self)
+        settingsDialog.exec()
         pass
 
     def showEvent(self, QShowEvent):
@@ -101,16 +113,26 @@ class MainWindow(QMainWindow):
             self.timer.start(200)
         pass
 
+    def startCapture(self):
+        self.proxyMode = True
+        self.playAction.setIcon(QIcon('img/pause.png'))
+        self.mouseEvent = MyMouseEvent(self.eventBound)
+        self.mouseEvent.start()
+        pass
+
+    def stopCapture(self):
+        self.proxyMode = False
+        self.playAction.setIcon(QIcon('img/play.png'))
+        self.mouseEvent.stop()
+        pass
+
+
     def toggleProxy(self):
         if self.proxyMode:
-            self.proxyMode = False
-            self.playAction.setIcon(QIcon('img/play.png'))
-            self.mouseEvent.stop()
+            self.stopCapture()
         else:
-            self.proxyMode = True
-            self.playAction.setIcon(QIcon('img/pause.png'))
-            self.mouseEvent = MyMouseEvent(self.eventBound)
-            self.mouseEvent.start()
+            self.startCapture()
+
         pass
 
     def startSend(self):
@@ -134,6 +156,9 @@ class MainWindow(QMainWindow):
         """
         接收键盘按下事件
         """
+        if e.key()==16777216 and self.proxyMode:
+            self.stopCapture()
+
         if not self.proxyMode:
             return
 
@@ -166,15 +191,33 @@ class MainWindow(QMainWindow):
         self.eventBound.event.emit(data)
         pass
 
-    def eventReceiver(self, message):
-        result = list(map(lambda it:int(it), message.split(',')))
-        if result[0] == EventUtils.MOUSE_TYPE:
-            pass
-
-        print('size :%s' %(self.geometry()))
-        self.client.send(message)
+    def resizeEvent(self, QResizeEvent):
+        """
+        接收窗口大小变化数据
+        """
+        self.sizeRecord = QResizeEvent.size()
         pass
 
+    def moveEvent(self, QMoveEvent):
+        """
+        接收窗口移动数据
+        """
+        self.positionRecord = QMoveEvent.pos()
+        pass
+
+    def sendWrapper(self, message):
+        """
+        鼠标坐标转换处理
+        """
+        result = list(map(lambda it:int(it), message.split(',')))
+        if result[0] == EventUtils.MOUSE_TYPE:
+            x = (result[2]-self.positionRecord.x())/self.sizeRecord.width() * GlobalValue.deviceSize[0] - GlobalValue.deviceSize[0]/2
+            y = (result[3]-self.positionRecord.y())/self.sizeRecord.height() * GlobalValue.deviceSize[1] - GlobalValue.deviceSize[1]/2
+            message = '%s,%s,%s,%s' %(result[0], result[1], int(x), int(y))
+            pass
+
+        self.client.send(message)
+        pass
 
 
 class MyMouseEvent(PyMouseEvent):
