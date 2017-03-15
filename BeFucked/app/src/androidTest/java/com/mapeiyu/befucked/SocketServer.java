@@ -6,19 +6,14 @@ import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
 
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
-
-import static org.junit.Assert.*;
 
 @RunWith(AndroidJUnit4.class)
 public class SocketServer {
@@ -27,6 +22,12 @@ public class SocketServer {
 
     private ServerSocket serverSocket;
     private boolean loop = true;
+    private Context context;
+
+    @Before
+    public void init() {
+        context = InstrumentationRegistry.getTargetContext();
+    }
 
     @Test
     public void acceptFromPC() throws IOException {
@@ -45,17 +46,18 @@ public class SocketServer {
                     builder.append(new String(bytes, 0, len));
                 }
                 String received = builder.toString();
-
                 Log.e(TAG, "received: " + received);
 
-                if ("stop".equals(received)) {
-                    loop = false;
-                }
+                EventParser.parseEvent(context, received);
 
-                DataOutputStream out = new DataOutputStream(server.getOutputStream());
-                String response = "response for: " + received;
-                out.write(response.getBytes());
-                out.flush();
+
+//                if ("stop".equals(received)) {
+//                    loop = false;
+//                }
+//                DataOutputStream out = new DataOutputStream(server.getOutputStream());
+//                String response = "response for: " + received;
+//                out.write(response.getBytes());
+//                out.flush();
                 server.close();
             } catch(Exception e) {
                 Log.e(TAG, "error: " + e.toString());

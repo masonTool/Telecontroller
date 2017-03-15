@@ -22,6 +22,10 @@ class EventBound(QObject):
     event = pyqtSignal([str])
 
 
+def debug(str):
+    # print(str)
+    pass
+
 class MainWindow(QMainWindow):
 
     def __init__(self):
@@ -31,7 +35,7 @@ class MainWindow(QMainWindow):
         self.eventBound = EventBound()
         self.client = SocketClient('127.0.0.1', GlobalValue.pc_port)
         self.client.message[str].connect(self.showReceived)
-        self.eventBound.event[str].connect(self.client.send)
+        self.eventBound.event[str].connect(self.eventReceiver)
 
         self.initUI()
         pass
@@ -88,7 +92,7 @@ class MainWindow(QMainWindow):
         """
         界面的显示事件
         """
-        print('show')
+        debug('show')
         if not GlobalValue.connectedDevice:
             self.statusBar().showMessage('选择连接设备');
             self.timer = QTimer();
@@ -123,7 +127,7 @@ class MainWindow(QMainWindow):
         """
         槽函数显示手机端返回数据
         """
-        print('received: ' + message)
+        debug('received: ' + message)
         pass
 
     def keyPressEvent(self, e):
@@ -133,7 +137,7 @@ class MainWindow(QMainWindow):
         if not self.proxyMode:
             return
 
-        print('keyboard pressed: %s %s' %(e.key(), e.text()))
+        debug('keyboard pressed: %s %s' %(e.key(), e.text()))
 
         if len(e.text()) == 0:
             ascii = 0
@@ -151,7 +155,7 @@ class MainWindow(QMainWindow):
         if not self.proxyMode:
             return
 
-        print('keyboard released: %s %s' % (e.key(), e.text()))
+        debug('keyboard released: %s %s' % (e.key(), e.text()))
 
         if len(e.text()) == 0:
             ascii = 0
@@ -161,6 +165,16 @@ class MainWindow(QMainWindow):
         data = '%s,%s,%s,%s' %(EventUtils.KEYBOARD_TYPE, EventUtils.KEYBOARD_ACTION_UP, e.key(), ascii)
         self.eventBound.event.emit(data)
         pass
+
+    def eventReceiver(self, message):
+        result = list(map(lambda it:int(it), message.split(',')))
+        if result[0] == EventUtils.MOUSE_TYPE:
+            pass
+
+        print('size :%s' %(self.geometry()))
+        self.client.send(message)
+        pass
+
 
 
 class MyMouseEvent(PyMouseEvent):
@@ -175,7 +189,7 @@ class MyMouseEvent(PyMouseEvent):
         if not self.enabled:
             return
 
-        print('mouse clicked: %s  %s  %s  %s' %(x, y, button, press))
+        debug('mouse clicked: %s  %s  %s  %s' %(x, y, button, press))
 
         if button == 1 and press:
             action = EventUtils.MOUSE_ACTION_LEFT_DOWN
@@ -204,21 +218,23 @@ class MyMouseEvent(PyMouseEvent):
         :param horizontal:
         :return:
         """
-        print('mouse scrolled: %s  %s  %s  %s' % (x, y, vertical, horizontal))
+        debug('mouse scrolled: %s  %s  %s  %s' % (x, y, vertical, horizontal))
         pass
 
     def move(self, x, y):
         if not self.enabled:
             return
-        print('mouse moved: %s %s' %(x, y))
+        debug('mouse moved: %s %s' %(x, y))
         data = '%s,%s,%s,%s'%(EventUtils.MOUSE_TYPE, EventUtils.MOUSE_ACTION_MOVE, x, y)
         self.event.emit(data)
         pass
 
     def stop(self):
         self.enabled = False
-        super().stop()
-        pass
+        try:
+            super().stop()
+        except:
+            pass
 
 
 if __name__ == '__main__':
