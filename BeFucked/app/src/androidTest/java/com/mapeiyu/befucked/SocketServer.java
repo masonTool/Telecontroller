@@ -1,9 +1,11 @@
 package com.mapeiyu.befucked;
 
+import android.app.Instrumentation;
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
+import android.view.MotionEvent;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -17,26 +19,33 @@ import java.net.Socket;
 
 @RunWith(AndroidJUnit4.class)
 public class SocketServer {
+    public static final boolean debug = false;
+
+    public static void log(String msg) {
+        if (debug) {
+            Log.e(TAG, msg);
+        }
+    }
+
     public static final String TAG = "SocketServer";
     public static int PORT = 9000;
 
     private ServerSocket serverSocket;
     private boolean loop = true;
-    private Context context;
+    private Instrumentation instrumentation;
 
     @Before
     public void init() {
-        context = InstrumentationRegistry.getTargetContext();
+        instrumentation = InstrumentationRegistry.getInstrumentation();
     }
 
     @Test
     public void acceptFromPC() throws IOException {
         serverSocket = new ServerSocket(PORT);
         while(loop) {
-            Log.e(TAG, "socket server waiting ...");
+            log("socket server waiting ...");
             try {
                 Socket server = serverSocket.accept();
-//                Log.e(TAG, "connected: " + server.getRemoteSocketAddress());
 
                 InputStream inputStream = server.getInputStream();
                 byte[] bytes = new byte[1024];
@@ -46,12 +55,10 @@ public class SocketServer {
                     builder.append(new String(bytes, 0, len));
                 }
                 String received = builder.toString();
-                Log.e(TAG, "received: " + received);
-
-                EventParser.parseEvent(context, received);
-
-
-//                if ("stop".equals(received)) {
+                log("received: " + received);
+                EventParser.parseEvent(instrumentation, received);
+                ;
+//                if ("stop".equals(received)) {、
 //                    loop = false;
 //                }
 //                DataOutputStream out = new DataOutputStream(server.getOutputStream());
@@ -60,8 +67,7 @@ public class SocketServer {
 //                out.flush();
                 server.close();
             } catch(Exception e) {
-                Log.e(TAG, "error: " + e.toString());
-                e.printStackTrace();
+                log(e.toString());
             }
         }
 

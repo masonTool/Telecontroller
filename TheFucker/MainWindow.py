@@ -156,7 +156,7 @@ class MainWindow(QMainWindow):
         """
         接收键盘按下事件
         """
-        if e.key()==16777216 and self.proxyMode:
+        if e.key() == 16777216 and self.proxyMode: #ESC
             self.stopCapture()
 
         if not self.proxyMode:
@@ -191,6 +191,21 @@ class MainWindow(QMainWindow):
         self.eventBound.event.emit(data)
         pass
 
+    def mouseMoveEvent(self, QMouseEvent): # MyMouseEvent不能处理按下鼠标移动的情况
+        """
+        按下鼠标按键的移动事件
+        """
+        if not self.proxyMode:
+            return
+
+        x = QMouseEvent.globalX()
+        y = QMouseEvent.globalY()
+
+        debug('mouse moved: %s %s' %(x, y))
+        data = '%s,%s,%s,%s'%(EventUtils.MOUSE_TYPE, EventUtils.MOUSE_ACTION_MOVE, x, y)
+        self.eventBound.event.emit(data)
+        pass
+
     def resizeEvent(self, QResizeEvent):
         """
         接收窗口大小变化数据
@@ -209,10 +224,10 @@ class MainWindow(QMainWindow):
         """
         鼠标坐标转换处理
         """
-        result = list(map(lambda it:int(it), message.split(',')))
+        result = list(map(lambda it:int(float(it)), message.split(',')))
         if result[0] == EventUtils.MOUSE_TYPE:
-            x = (result[2]-self.positionRecord.x())/self.sizeRecord.width() * GlobalValue.deviceSize[0] - GlobalValue.deviceSize[0]/2
-            y = (result[3]-self.positionRecord.y())/self.sizeRecord.height() * GlobalValue.deviceSize[1] - GlobalValue.deviceSize[1]/2
+            x = (result[2]-self.positionRecord.x())/self.sizeRecord.width() * GlobalValue.deviceSize[0]
+            y = (result[3]-self.positionRecord.y())/self.sizeRecord.height() * GlobalValue.deviceSize[1]
             message = '%s,%s,%s,%s' %(result[0], result[1], int(x), int(y))
             pass
 

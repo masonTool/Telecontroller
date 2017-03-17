@@ -37,7 +37,7 @@ public class MouseManager {
         handler = new Handler(Looper.getMainLooper());
         windowManager =  (WindowManager)context.getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
         params = new LayoutParams();
-        params.type = LayoutParams.TYPE_PHONE;
+        params.type = LayoutParams.TYPE_TOAST;
         params.flags = LayoutParams.FLAG_NOT_FOCUSABLE | LayoutParams.FLAG_NOT_TOUCHABLE | LayoutParams.FLAG_LAYOUT_IN_SCREEN;
         params.format = PixelFormat.RGBA_8888;
         params.x = 0;
